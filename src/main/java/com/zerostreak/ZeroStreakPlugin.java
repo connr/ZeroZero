@@ -12,6 +12,7 @@ import javax.sound.sampled.UnsupportedAudioFileException;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.File;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Hitsplat;
 import net.runelite.api.events.HitsplatApplied;
@@ -30,7 +31,7 @@ public class ZeroStreakPlugin extends Plugin
 {
 	@Inject
 	private ZeroStreakConfig config;
-
+	private static final File RUNELITE_DIR = new File(System.getProperty("user.home"), ".runelite");
 	private int consecutiveZeros = 0;
 
 	@Provides
@@ -86,16 +87,30 @@ public class ZeroStreakPlugin extends Plugin
 	{
 		log.debug("Playing zero streak sound!");
 
-		try (InputStream resourceStream = ZeroStreakPlugin.class.getResourceAsStream("zero_streak.wav"))
-		{
-			if (resourceStream == null)
-			{
-				log.warn("Could not find zero_streak.wav");
-				return;
-			}
+		// Check for a custom sound in the RuneLite folder first
+		// Default location: C:\Users\<name>\.runelite\zero-streak\zero_streak.wav
+		File customSound = new File(RUNELITE_DIR, "zero-streak/zero_streak.wav");
 
-			AudioInputStream audioStream = AudioSystem.getAudioInputStream(
-					new BufferedInputStream(resourceStream));
+		try
+		{
+			AudioInputStream audioStream;
+
+			if (customSound.exists())
+			{
+				log.debug("Using custom sound from {}", customSound.getAbsolutePath());
+				audioStream = AudioSystem.getAudioInputStream(customSound);
+			}
+			else
+			{
+				log.debug("Using bundled sound");
+				InputStream resourceStream = ZeroStreakPlugin.class.getResourceAsStream("zero_streak.wav");
+				if (resourceStream == null)
+				{
+					log.warn("Could not find bundled zero_streak.wav");
+					return;
+				}
+				audioStream = AudioSystem.getAudioInputStream(new BufferedInputStream(resourceStream));
+			}
 
 			Clip clip = AudioSystem.getClip();
 			clip.open(audioStream);
@@ -116,14 +131,8 @@ public class ZeroStreakPlugin extends Plugin
 				if (e.getType() == LineEvent.Type.STOP)
 				{
 					clip.close();
-					try
-					{
-						audioStream.close();
-					}
-					catch (IOException ex)
-					{
-						log.warn("Error closing audio stream", ex);
-					}
+					try { audioStream.close(); }
+					catch (IOException ex) { log.warn("Error closing audio stream", ex); }
 				}
 			});
 		}
