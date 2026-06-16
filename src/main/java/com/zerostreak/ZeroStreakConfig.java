@@ -1,19 +1,40 @@
-package com.example;
+package com.zerostreak;
 
 import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
+import net.runelite.client.config.Range;
 
-@ConfigGroup("example")
-public interface ExampleConfig extends Config
+@ConfigGroup("zerostreak")
+public interface ZeroStreakConfig extends Config
 {
 	@ConfigItem(
-		keyName = "greeting",
-		name = "Welcome Greeting",
-		description = "The message to show to the user when they login"
+			keyName = "volume",
+			name = "Volume",
+			description = "Volume of the sound (0-100)",
+			position = 0
 	)
-	default String greeting()
+	@Range(
+			min = 0,
+			max = 100
+	)
+	default int volume()
 	{
-		return "Hello";
+		return 80;
+	}
+
+	@ConfigItem(
+			keyName = "consecutiveZerosRequired",
+			name = "Zeros Required",
+			description = "How many 0s in a row before the sound plays",
+			position = 1
+	)
+	@Range(
+			min = 1,
+			max = 10
+	)
+	default int consecutiveZerosRequired()
+	{
+		return 4;
 	}
 }
